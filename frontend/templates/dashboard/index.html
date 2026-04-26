@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — SMA Platform{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Welcome back, {{ current_user.username }} 👋</h2>
+      <p class="text-muted mb-0">Manage your social media analytics cases</p>
+    </div>
+    <a href="/cases/new" class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-circle me-2"></i>New Case
+    </a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-purple"><i class="bi bi-folder2-open"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ stats.total_cases }}</div>
+          <div class="kpi-label">Total Cases</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-blue"><i class="bi bi-chat-square-dots"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ stats.total_posts }}</div>
+          <div class="kpi-label">Posts Collected</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="kpi-card">
+        <div class="kpi-icon bg-green"><i class="bi bi-graph-up"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ stats.total_analyses }}</div>
+          <div class="kpi-label">Analyses Run</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cases Grid -->
+  {% if cases %}
+  <div class="row g-3">
+    {% for case in cases %}
+    <div class="col-md-6 col-lg-4">
+      <div class="case-card">
+        <div class="case-card-header">
+          <div class="case-platform-badge {{ 'badge-x' if case.platform == 'X' else 'badge-fb' }}">
+            <i class="bi {{ 'bi-twitter-x' if case.platform == 'X' else 'bi-facebook' }} me-1"></i>
+            {{ case.platform }}
+          </div>
+          <span class="case-status status-{{ case.status }}">{{ case.status }}</span>
+        </div>
+        <h5 class="case-title">{{ case.name }}</h5>
+        <div class="case-keyword"><i class="bi bi-search me-1"></i>{{ case.keyword }}</div>
+        {% if case.description %}
+        <p class="case-desc">{{ case.description[:80] }}{% if case.description|length > 80 %}...{% endif %}</p>
+        {% endif %}
+        <div class="case-meta">
+          <small class="text-muted"><i class="bi bi-calendar me-1"></i>{{ case.created_at.strftime('%b %d, %Y') }}</small>
+        </div>
+        <div class="case-actions">
+          <a href="/case/{{ case.id }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-bar-chart me-1"></i>Analyze
+          </a>
+          <form method="POST" action="/cases/{{ case.id }}/delete" class="d-inline"
+                onsubmit="return confirm('Delete this case?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-folder-plus"></i></div>
+    <h4>No cases yet</h4>
+    <p class="text-muted">Create your first analytics case to get started</p>
+    <a href="/cases/new" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-2"></i>Create First Case
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

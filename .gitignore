@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# Flask / SQLite database (DO NOT commit)
+instance/
+*.db
+*.sqlite3
+
+# Secrets (DO NOT commit)
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+pip-log.txt
+
+# Reports (generated at runtime)
+/tmp/*.pdf
+*.pdf
+
+# Node (if any)
+node_modules/

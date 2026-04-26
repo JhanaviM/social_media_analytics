@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}New Case — SMA Platform{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:720px">
+  <div class="d-flex align-items-center mb-4">
+    <a href="/" class="btn btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <div>
+      <h3 class="fw-bold mb-0">New Analytics Case</h3>
+      <p class="text-muted mb-0">Set up a new social media tracking case</p>
+    </div>
+  </div>
+
+  <div class="card sma-card">
+    <div class="card-body p-4">
+      <form method="POST" action="/cases/new">
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Case Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control form-control-lg"
+                 placeholder="e.g. Tesla Brand Analysis Q1 2025" required/>
+          <div class="form-text">Give this case a descriptive name</div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Keyword / Brand <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" name="keyword" class="form-control"
+                     placeholder="e.g. Tesla, iPhone, Nike" required/>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Platform <span class="text-danger">*</span></label>
+            <select name="platform" class="form-select">
+              <option value="X">X (Twitter)</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Description</label>
+          <textarea name="description" class="form-control" rows="3"
+                    placeholder="Briefly describe the goal of this analysis..."></textarea>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Apify Actor URL <small class="text-muted fw-normal">(optional)</small></label>
+          <input type="text" name="apify_source" class="form-control"
+                 placeholder="e.g. https://apify.com/apidojo/tweet-scraper"/>
+          <div class="form-text">Leave blank to use sample data for demo</div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Post IDs / URLs <small class="text-muted fw-normal">(optional)</small></label>
+          <textarea name="post_ids" class="form-control" rows="2"
+                    placeholder="Paste specific post URLs, one per line..."></textarea>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-primary btn-lg px-5">
+            <i class="bi bi-folder-plus me-2"></i>Create Case
+          </button>
+          <a href="/" class="btn btn-outline-secondary btn-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

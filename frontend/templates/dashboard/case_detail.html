@@ -1,0 +1,659 @@
+{% extends 'base.html' %}
+{% block title %}{{ case.name }} — SMA Platform{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <!-- Case Header -->
+  <div class="case-header-bar d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h3 class="fw-bold mb-0">{{ case.name }}</h3>
+        <span class="badge bg-primary me-2">{{ case.keyword }}</span>
+        <span class="badge bg-secondary">{{ case.platform }}</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <form method="POST" action="/cases/{{ case.id }}/load-sample" class="d-inline">
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-database-fill-add me-1"></i>Load Sample Data
+        </button>
+      </form>
+      <button class="btn btn-success btn-sm" onclick="runAllModules({{ case.id }})">
+        <i class="bi bi-play-circle me-1"></i>Run All Modules
+      </button>
+      <a href="/api/report/{{ case.id }}" class="btn btn-outline-dark btn-sm">
+        <i class="bi bi-file-pdf me-1"></i>Export PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Post count KPI -->
+  <div class="row g-2 mb-3">
+    <div class="col-auto">
+      <div class="mini-kpi">
+        <i class="bi bi-chat-dots text-primary"></i>
+        <span class="ms-2"><b>{{ posts|length }}</b> posts loaded</span>
+      </div>
+    </div>
+    <div class="col-auto">
+      <div class="mini-kpi">
+        <i class="bi bi-clock text-muted"></i>
+        <span class="ms-2 text-muted">Created {{ case.created_at.strftime('%b %d, %Y') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module Tabs -->
+  <ul class="nav nav-tabs sma-tabs mb-4" id="moduleTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#sentiment">
+      <i class="bi bi-emoji-smile me-1"></i>Sentiment</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#trending">
+      <i class="bi bi-hash me-1"></i>Trending</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#network">
+      <i class="bi bi-diagram-3 me-1"></i>Network</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#recommendation">
+      <i class="bi bi-stars me-1"></i>Recommend</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#fakenews">
+      <i class="bi bi-shield-exclamation me-1"></i>Fake News</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#segmentation">
+      <i class="bi bi-people me-1"></i>Segments</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#visualization">
+      <i class="bi bi-bar-chart me-1"></i>Metrics</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ads">
+      <i class="bi bi-megaphone me-1"></i>Ads</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#influencer">
+      <i class="bi bi-person-badge me-1"></i>Influencers</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#realtime">
+      <i class="bi bi-broadcast me-1"></i>Realtime</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#competitor">
+      <i class="bi bi-trophy me-1"></i>Competitor</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#prediction">
+      <i class="bi bi-graph-up-arrow me-1"></i>Predict</a></li>
+  </ul>
+
+  <div class="tab-content" id="moduleTabContent">
+
+    <!-- ── Module 1: Sentiment ─────────────────────────────────── -->
+    <div class="tab-pane fade show active" id="sentiment">
+      <div class="module-header">
+        <h5><i class="bi bi-emoji-smile me-2 text-primary"></i>Sentiment Analysis</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('sentiment', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      <div id="sentiment-content">
+        {% if results.sentiment %}
+          {% set s = results.sentiment %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="metric-card green">
+              <div class="metric-val">{{ s.distribution.Positive }}</div>
+              <div class="metric-lbl">Positive</div>
+              <div class="metric-pct">{{ s.percentages.Positive }}%</div>
+            </div></div>
+            <div class="col-md-3"><div class="metric-card red">
+              <div class="metric-val">{{ s.distribution.Negative }}</div>
+              <div class="metric-lbl">Negative</div>
+              <div class="metric-pct">{{ s.percentages.Negative }}%</div>
+            </div></div>
+            <div class="col-md-3"><div class="metric-card gray">
+              <div class="metric-val">{{ s.distribution.Neutral }}</div>
+              <div class="metric-lbl">Neutral</div>
+              <div class="metric-pct">{{ s.percentages.Neutral }}%</div>
+            </div></div>
+            <div class="col-md-3"><div class="metric-card blue">
+              <div class="metric-val">{{ s.average_score }}</div>
+              <div class="metric-lbl">Avg Score</div>
+              <div class="metric-pct">-1 to +1</div>
+            </div></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-5">
+              <div class="chart-card"><canvas id="sentimentPieChart"></canvas></div>
+            </div>
+            <div class="col-md-7">
+              <div class="chart-card"><canvas id="sentimentTimelineChart"></canvas></div>
+            </div>
+          </div>
+          <script>
+            window.sentimentData = {{ s | tojson }};
+          </script>
+        {% else %}
+          <div class="module-empty">Run the analysis to see sentiment results</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Module 2: Trending ─────────────────────────────────── -->
+    <div class="tab-pane fade" id="trending">
+      <div class="module-header">
+        <h5><i class="bi bi-hash me-2 text-primary"></i>Trending Topics Detection</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('trending', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      <div id="trending-content">
+        {% if results.trending %}
+          {% set t = results.trending %}
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="metric-card blue">
+              <div class="metric-val">{{ t.unique_hashtags }}</div><div class="metric-lbl">Unique Hashtags</div>
+            </div></div>
+            <div class="col-md-3"><div class="metric-card purple">
+              <div class="metric-val">{{ t.unique_keywords }}</div><div class="metric-lbl">Unique Keywords</div>
+            </div></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="chart-card"><canvas id="hashtagChart"></canvas></div>
+            </div>
+            <div class="col-md-6">
+              <div class="chart-card">
+                <h6 class="mb-3">Top Hashtags</h6>
+                {% for tag in t.top_hashtags[:10] %}
+                <div class="trend-bar-item">
+                  <span class="trend-tag">{{ tag.tag }}</span>
+                  <div class="trend-bar-wrap">
+                    <div class="trend-bar" style="width:{{ (tag.count / t.top_hashtags[0].count * 100)|int }}%"></div>
+                  </div>
+                  <span class="trend-count">{{ tag.count }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <script>window.trendingData = {{ t | tojson }};</script>
+        {% else %}
+          <div class="module-empty">Run the analysis to see trending topics</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Module 3: Network ───────────────────────────────────── -->
+    <div class="tab-pane fade" id="network">
+      <div class="module-header">
+        <h5><i class="bi bi-diagram-3 me-2 text-primary"></i>Network Analysis</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('network', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.network %}
+        {% set n = results.network %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><div class="metric-card blue">
+            <div class="metric-val">{{ n.total_nodes }}</div><div class="metric-lbl">Network Nodes</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card purple">
+            <div class="metric-val">{{ n.total_edges }}</div><div class="metric-lbl">Edges</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card green">
+            <div class="metric-val">{{ n.density }}</div><div class="metric-lbl">Density</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card gray">
+            <div class="metric-val">{{ n.graph_stats.avg_degree }}</div><div class="metric-lbl">Avg Degree</div>
+          </div></div>
+        </div>
+        <div class="chart-card mb-3">
+          <h6>Top Influencers by Eigenvector Centrality</h6>
+          <div class="table-responsive">
+            <table class="table table-sm sma-table">
+              <thead><tr><th>#</th><th>Author</th><th>Eigenvector</th><th>Betweenness</th><th>Degree</th><th>Followers</th></tr></thead>
+              <tbody>
+                {% for inf in n.top_influencers[:10] %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td><b>{{ inf.id }}</b></td>
+                  <td><span class="badge bg-purple-soft">{{ inf.eigenvector_centrality }}</span></td>
+                  <td>{{ inf.betweenness }}</td>
+                  <td>{{ inf.degree }}</td>
+                  <td>{{ inf.followers | int }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="chart-card"><canvas id="networkDegreeChart"></canvas></div>
+        <script>window.networkData = {{ n | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis to see network graph</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 4: Recommendation ───────────────────────────── -->
+    <div class="tab-pane fade" id="recommendation">
+      <div class="module-header">
+        <h5><i class="bi bi-stars me-2 text-primary"></i>Recommendation System</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('recommendation', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.recommendation %}
+        {% set r = results.recommendation %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="chart-card">
+              <h6>Content-Based Recommendations</h6>
+              {% for item in r.content_based[:8] %}
+              <div class="rec-item">
+                <div class="rec-sim-badge">{{ (item.similarity * 100)|int }}% match</div>
+                <p class="mb-1 small">{{ item.text }}</p>
+                <small class="text-muted">@{{ item.author }} · {{ item.likes }} likes</small>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="chart-card">
+              <h6>Top Authors by Engagement (Collaborative)</h6>
+              <div class="table-responsive">
+                <table class="table table-sm sma-table">
+                  <thead><tr><th>Author</th><th>Avg Score</th><th>Likes</th><th>Posts</th></tr></thead>
+                  <tbody>
+                    {% for c in r.collaborative[:8] %}
+                    <tr>
+                      <td>@{{ c.author }}</td>
+                      <td><span class="badge bg-success-soft">{{ c.avg_engagement_score }}</span></td>
+                      <td>{{ c.total_likes }}</td>
+                      <td>{{ c.post_count }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="module-empty">Run the analysis to see recommendations</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 5: Fake News ─────────────────────────────────── -->
+    <div class="tab-pane fade" id="fakenews">
+      <div class="module-header">
+        <h5><i class="bi bi-shield-exclamation me-2 text-danger"></i>Fake News Detection</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('fakenews', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.fakenews %}
+        {% set fn = results.fakenews %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><div class="metric-card green">
+            <div class="metric-val">{{ fn.real_count }}</div><div class="metric-lbl">Real</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card red">
+            <div class="metric-val">{{ fn.fake_count }}</div><div class="metric-lbl">Fake / Suspicious</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card gray">
+            <div class="metric-val">{{ fn.uncertain_count }}</div><div class="metric-lbl">Uncertain</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card blue">
+            <div class="metric-val">{{ fn.total_posts }}</div><div class="metric-lbl">Total Analyzed</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-5">
+            <div class="chart-card"><canvas id="fakeNewsPieChart"></canvas></div>
+          </div>
+          <div class="col-md-7">
+            <div class="chart-card">
+              <h6 class="text-danger">High-Risk Posts</h6>
+              {% for post in fn.high_risk_posts[:6] %}
+              <div class="fake-alert-item">
+                <span class="badge bg-danger me-2">Score: {{ post.suspicion_score }}</span>
+                <span class="small">{{ post.text[:100] }}</span>
+                <br><small class="text-muted">@{{ post.author }} · Confidence: {{ (post.confidence * 100)|int }}%</small>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>window.fakeNewsData = {{ fn | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis to detect fake news</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 6: Segmentation ─────────────────────────────── -->
+    <div class="tab-pane fade" id="segmentation">
+      <div class="module-header">
+        <h5><i class="bi bi-people me-2 text-primary"></i>User Segmentation</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('segmentation', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.segmentation %}
+        {% set seg = results.segmentation %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><div class="metric-card blue">
+            <div class="metric-val">{{ seg.total_users }}</div><div class="metric-lbl">Unique Users</div>
+          </div></div>
+          <div class="col-md-4"><div class="metric-card purple">
+            <div class="metric-val">{{ seg.n_clusters }}</div><div class="metric-lbl">Segments Found</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-5">
+            <div class="chart-card"><canvas id="segmentPieChart"></canvas></div>
+          </div>
+          <div class="col-md-7">
+            <div class="chart-card">
+              {% for segment in seg.segments %}
+              <div class="segment-block" style="border-left-color: {{ segment.color }}">
+                <div class="d-flex justify-content-between">
+                  <strong style="color: {{ segment.color }}">{{ segment.name }}</strong>
+                  <span class="badge" style="background:{{ segment.color }}">{{ segment.count }} users</span>
+                </div>
+                <p class="small text-muted mb-1">{{ segment.description }}</p>
+                <small>Avg Followers: {{ segment.avg_followers }} · Avg Likes: {{ segment.avg_likes }}</small>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>window.segmentData = {{ seg | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis to segment users</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 7: Visualization ────────────────────────────── -->
+    <div class="tab-pane fade" id="visualization">
+      <div class="module-header">
+        <h5><i class="bi bi-bar-chart me-2 text-primary"></i>Data Visualization & Metrics</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('visualization', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.visualization %}
+        {% set v = results.visualization %}
+        {% set kpi = v.kpis %}
+        <div class="row g-2 mb-4">
+          <div class="col-md-2"><div class="metric-card blue">
+            <div class="metric-val">{{ kpi.total_posts }}</div><div class="metric-lbl">Posts</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card green">
+            <div class="metric-val">{{ kpi.total_likes }}</div><div class="metric-lbl">Likes</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card purple">
+            <div class="metric-val">{{ kpi.total_retweets }}</div><div class="metric-lbl">Retweets</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card gray">
+            <div class="metric-val">{{ kpi.total_replies }}</div><div class="metric-lbl">Replies</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card red">
+            <div class="metric-val">{{ "{:,}".format(kpi.total_reach) }}</div><div class="metric-lbl">Reach</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card blue">
+            <div class="metric-val">{{ kpi.engagement_rate }}%</div><div class="metric-lbl">Eng. Rate</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-12"><div class="chart-card"><canvas id="engagementTimelineChart"></canvas></div></div>
+          <div class="col-md-6"><div class="chart-card"><canvas id="hourlyPostsChart"></canvas></div></div>
+          <div class="col-md-6"><div class="chart-card"><canvas id="engagementDistChart"></canvas></div></div>
+        </div>
+        <script>window.vizData = {{ v | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis to see visualization metrics</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 8: Ads ──────────────────────────────────────── -->
+    <div class="tab-pane fade" id="ads">
+      <div class="module-header">
+        <h5><i class="bi bi-megaphone me-2 text-primary"></i>Ad Campaign Optimization</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('ads', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.ads %}
+        {% set a = results.ads %}
+        {% set m = a.metrics %}
+        <div class="row g-2 mb-4">
+          <div class="col-md-2"><div class="metric-card blue">
+            <div class="metric-val">{{ m.ctr }}%</div><div class="metric-lbl">CTR</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card green">
+            <div class="metric-val">{{ m.conversion_rate }}%</div><div class="metric-lbl">Conv. Rate</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card {% if m.roi > 0 %}green{% else %}red{% endif %}">
+            <div class="metric-val">{{ m.roi }}%</div><div class="metric-lbl">ROI</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card purple">
+            <div class="metric-val">{{ m.roas }}x</div><div class="metric-lbl">ROAS</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card gray">
+            <div class="metric-val">${{ m.cpc }}</div><div class="metric-lbl">CPC</div>
+          </div></div>
+          <div class="col-md-2"><div class="metric-card {% if a.performance_grade in ['A','B'] %}green{% else %}red{% endif %}">
+            <div class="metric-val">{{ a.performance_grade }}</div><div class="metric-lbl">Grade</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="chart-card"><canvas id="adHourlyChart"></canvas></div></div>
+          <div class="col-md-6">
+            <div class="chart-card">
+              <h6>Recommendations</h6>
+              {% for rec in a.recommendations %}
+              <div class="rec-tip"><i class="bi bi-lightbulb text-warning me-2"></i>{{ rec }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>window.adsData = {{ a | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis for ad optimization</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 9: Influencers ───────────────────────────────── -->
+    <div class="tab-pane fade" id="influencer">
+      <div class="module-header">
+        <h5><i class="bi bi-person-badge me-2 text-primary"></i>Influencer Detection</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('influencer', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.influencer %}
+        {% set inf = results.influencer %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><div class="metric-card blue">
+            <div class="metric-val">{{ inf.total_analyzed }}</div><div class="metric-lbl">Analyzed</div>
+          </div></div>
+        </div>
+        <div class="chart-card mb-3">
+          <h6>Influencer Rankings</h6>
+          <div class="table-responsive">
+            <table class="table sma-table">
+              <thead><tr><th>#</th><th>Author</th><th>Influence Score</th><th>Followers</th><th>Avg Engagement</th><th>Tier</th><th>Mentions Recv.</th></tr></thead>
+              <tbody>
+                {% for i in inf.top_influencers[:12] %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td><b>@{{ i.author }}</b></td>
+                  <td>
+                    <div class="progress-wrap">
+                      <div class="progress-bar-mini" style="width:{{ [(i.influence_score / 100 * 100)|int, 100]|min }}%"></div>
+                      <span>{{ i.influence_score }}</span>
+                    </div>
+                  </td>
+                  <td>{{ "{:,}".format(i.followers) }}</td>
+                  <td>{{ i.avg_engagement }}</td>
+                  <td><span class="tier-badge">{{ i.tier }}</span></td>
+                  <td>{{ i.mentions_received }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="chart-card">
+          <canvas id="influencerChart"></canvas>
+        </div>
+        <script>window.influencerData = {{ inf | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the analysis to detect influencers</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 10: Realtime ─────────────────────────────────── -->
+    <div class="tab-pane fade" id="realtime">
+      <div class="module-header">
+        <h5><i class="bi bi-broadcast me-2 text-danger"></i>Real-Time Monitoring</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('realtime', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.realtime %}
+        {% set rt = results.realtime %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><div class="metric-card blue">
+            <div class="metric-val">{{ rt.total_mentions }}</div><div class="metric-lbl">Mentions</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card green">
+            <div class="metric-val">{{ rt.mention_rate }}%</div><div class="metric-lbl">Mention Rate</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card red">
+            <div class="metric-val">{{ rt.monitoring_summary.total_alerts }}</div><div class="metric-lbl">Alerts</div>
+          </div></div>
+        </div>
+        {% if rt.alerts %}
+        <div class="mb-3">
+          {% for alert in rt.alerts %}
+          <div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle me-2"></i>{{ alert.message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="row g-3">
+          <div class="col-md-8"><div class="chart-card"><canvas id="realtimeHourlyChart"></canvas></div></div>
+          <div class="col-md-4">
+            <div class="chart-card">
+              <h6>Co-occurring Terms</h6>
+              {% for term in rt.co_occurring_terms[:10] %}
+              <div class="co-term"><span class="co-word">{{ term.term }}</span><span class="co-count">{{ term.count }}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>window.realtimeData = {{ rt | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run to monitor keyword mentions</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 11: Competitor ───────────────────────────────── -->
+    <div class="tab-pane fade" id="competitor">
+      <div class="module-header">
+        <h5><i class="bi bi-trophy me-2 text-warning"></i>Competitor Analysis</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('competitor', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.competitor %}
+        {% set comp = results.competitor %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><div class="metric-card green">
+            <div class="metric-val">{{ comp.competitive_position }}</div><div class="metric-lbl">Position</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card blue">
+            <div class="metric-val">{{ comp.market_leader }}</div><div class="metric-lbl">Market Leader</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-8"><div class="chart-card"><canvas id="competitorChart"></canvas></div></div>
+          <div class="col-md-4">
+            <div class="chart-card">
+              <h6>Insights</h6>
+              {% for insight in comp.insights %}
+              <div class="rec-tip"><i class="bi bi-info-circle text-info me-2"></i>{{ insight }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <script>window.competitorData = {{ comp | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run to compare against competitors</div>
+      {% endif %}
+    </div>
+
+    <!-- ── Module 12: Prediction ───────────────────────────────── -->
+    <div class="tab-pane fade" id="prediction">
+      <div class="module-header">
+        <h5><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Popularity Prediction</h5>
+        <button class="btn btn-primary btn-sm" onclick="runModule('prediction', {{ case.id }})">
+          <i class="bi bi-play me-1"></i>Run Analysis
+        </button>
+      </div>
+      {% if results.prediction %}
+        {% set pred = results.prediction %}
+        {% set perf = pred.model_performance %}
+        <div class="row g-3 mb-4">
+          <div class="col-md-3"><div class="metric-card green">
+            <div class="metric-val">{{ perf.random_forest_r2 }}</div><div class="metric-lbl">R² Score</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card blue">
+            <div class="metric-val">{{ perf.random_forest_rmse }}</div><div class="metric-lbl">RMSE</div>
+          </div></div>
+          <div class="col-md-3"><div class="metric-card purple">
+            <div class="metric-val">{{ perf.best_model }}</div><div class="metric-lbl">Best Model</div>
+          </div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="chart-card"><canvas id="predictionScatterChart"></canvas></div></div>
+          <div class="col-md-6">
+            <div class="chart-card">
+              <h6>Feature Importance</h6>
+              {% for feat in pred.feature_importance %}
+              <div class="feat-bar-item">
+                <span class="feat-name">{{ feat.feature }}</span>
+                <div class="feat-bar-wrap">
+                  <div class="feat-bar" style="width:{{ (feat.importance * 100 / pred.feature_importance[0].importance)|int }}%"></div>
+                </div>
+                <span class="feat-val">{{ feat.importance }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="chart-card mt-3">
+          <h6>Future Scenario Predictions</h6>
+          <div class="row g-2">
+            {% for sc in pred.future_scenarios %}
+            <div class="col-md-4">
+              <div class="scenario-card">
+                <div class="scenario-name">{{ sc.scenario }}</div>
+                <div class="scenario-pred">{{ sc.predicted }} engagement</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <script>window.predictionData = {{ pred | tojson }};</script>
+      {% else %}
+        <div class="module-empty">Run the ML model to predict popularity</div>
+      {% endif %}
+    </div>
+
+  </div><!-- /tab-content -->
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+  <div class="loading-box">
+    <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;"></div>
+    <div id="loadingText" class="fw-semibold">Running analysis...</div>
+  </div>
+</div>
+
+<script>
+const CASE_ID = {{ case.id }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules.js') }}"></script>
+{% endblock %}

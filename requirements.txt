@@ -6,12 +6,20 @@ flask-cors==4.0.0
 werkzeug==3.0.1
 jinja2==3.1.2
 sqlalchemy==2.0.23
-scikit-learn==1.4.2
+
+# ML + Data (fixed compatibility)
 numpy==1.26.4
-nltk==3.8.1
-networkx==3.2.1
+scikit-learn==1.4.2
 xgboost==2.0.3
+
+# NLP
+nltk==3.8.1
+
+# Graphs
 plotly==5.18.0
+
+# Utilities
+networkx==3.2.1
 reportlab==4.0.8
 Pillow==10.3.0
 python-dotenv==1.0.0

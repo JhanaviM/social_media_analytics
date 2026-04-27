@@ -2,8 +2,10 @@ services:
   - type: web
     name: sma-platform
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -12,7 +14,8 @@ services:
       - key: FLASK_DEBUG
         value: "0"
       - key: DATABASE_URL
-        value: sqlite:///sma.db
+        value: "sqlite:///sma.db"
       - key: APIFY_API_TOKEN
-        sync: false   # you enter this manually in Render dashboard
+        sync: false
+    healthCheckPath: /auth/login
     autoDeploy: true
